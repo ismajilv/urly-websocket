@@ -81,9 +81,32 @@ Resources:
       IntegrationUri: 
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendMessageFunction.Arn}/invocations
+            
+  GetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref BrowserServerWebSocket
+      RouteKey: getconnectionid
+      AuthorizationType: NONE
+      OperationName: GetRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref GetInteg
+  GetInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref BrowserServerWebSocket
+      Description: Get Connection Id Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetConnectionIdFunction.Arn}/invocations
+  
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
+    - GetRoute
     - ConnectRoute
     - SendRoute
     - DisconnectRoute
@@ -183,6 +206,35 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref SendMessageFunction
       Principal: apigateway.amazonaws.com
+      
+  GetConnectionIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: getconnectionid/
+      Handler: app.handler
+      MemorySize: 256
+      Runtime: nodejs10.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: !Ref TableName
+      - Statement:
+        - Effect: Allow
+          Action:
+          - 'execute-api:ManageConnections'
+          Resource:
+          - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${BrowserServerWebSocket}/*'
+  GetConnectionIdPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - BrowserServerWebSocket
+      - GetConnectionIdFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GetConnectionIdFunction
+      Principal: apigateway.amazonaws.com
 
 Outputs:
   ConnectionsTableArn:
@@ -200,6 +252,10 @@ Outputs:
   SendMessageFunctionArn:
     Description: "SendMessage function ARN"
     Value: !GetAtt SendMessageFunction.Arn
+    
+  GetConnectionIdFunctionArn:
+    Description: "GetConnectionId function ARN"
+    Value: !GetAtt GetConnectionIdFunction.Arn
 
   WebSocketURI:
     Description: "The WSS Protocol URI to connect to"
