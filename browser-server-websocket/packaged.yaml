@@ -89,20 +89,20 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri:
         Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendMessageFunction.Arn}/invocations
-  GetConnectionIdRoute:
+  GetRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId:
         Ref: BrowserServerWebSocket
       RouteKey: getconnectionid
       AuthorizationType: NONE
-      OperationName: GetConnectionIdRoute
+      OperationName: GetRoute
       Target:
         Fn::Join:
         - /
         - - integrations
-          - Ref: GetConnectionIdInteg
-  GetConnectionIdInteg:
+          - Ref: GetInteg
+  GetInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId:
@@ -114,7 +114,7 @@ Resources:
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
-    - GetConnectionIdRoute
+    - GetRoute
     - ConnectRoute
     - SendRoute
     - DisconnectRoute
@@ -149,7 +149,7 @@ Resources:
   OnConnectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://urly-code-test/7a5b44b40eb970028e27b6b737349191
+      CodeUri: s3://urly-code-test/077e5e3ced0eefef17db1dd30967a565
       Handler: app.handler
       MemorySize: 256
       Runtime: nodejs10.x
@@ -174,7 +174,7 @@ Resources:
   OnDisconnectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://urly-code-test/54c44dcf9e0fc2c4fff868d7feb519fa
+      CodeUri: s3://urly-code-test/4b732776f803ff88328e16deb2b6267b
       Handler: app.handler
       MemorySize: 256
       Runtime: nodejs10.x
@@ -199,7 +199,7 @@ Resources:
   SendMessageFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://urly-code-test/fae124b77c52e45586b25088fd83b34d
+      CodeUri: s3://urly-code-test/fd5ad206835ea4ba5b47caddd45105b3
       Handler: app.handler
       MemorySize: 256
       Runtime: nodejs10.x
@@ -230,18 +230,11 @@ Resources:
   GetConnectionIdFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://urly-code-test/a384d7bd73a980414a87c0e84885d06a
+      CodeUri: s3://urly-code-test/00e00a0dcc7767ed0ee627ae30d14c0c
       Handler: app.handler
       MemorySize: 256
       Runtime: nodejs10.x
-      Environment:
-        Variables:
-          TABLE_NAME:
-            Ref: TableName
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:
-            Ref: TableName
       - Statement:
         - Effect: Allow
           Action:
