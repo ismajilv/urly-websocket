@@ -6,10 +6,13 @@ AWS.config.update({ region: process.env.AWS_REGION });
 var DDB = new AWS.DynamoDB({ apiVersion: "2012-10-08" });
 
 exports.handler = function (event, context, callback) {
+  const simpleBrowserId = Math.floor(Math.random() * 10).toString()
+
   var putParams = {
     TableName: process.env.TABLE_NAME,
     Item: {
-      browserId: { S: event.requestContext.connectionId }
+      browserId: { S: event.requestContext.connectionId },
+      simpleBrowserId: { S: simpleBrowserId } //TODO
     }
   };
 

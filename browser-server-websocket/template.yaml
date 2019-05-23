@@ -125,12 +125,24 @@ Resources:
       AttributeDefinitions:
       - AttributeName: "browserId"
         AttributeType: "S"
+      - AttributeName: "simpleBrowserId"
+        AttributeType: "S"
       KeySchema:
       - AttributeName: "browserId"
         KeyType: "HASH"
+      GlobalSecondaryIndexes:
+      - IndexName: "simpleBrowserIdIndex"
+        KeySchema:
+          - AttributeName: "simpleBrowserId"
+            KeyType: HASH
+        Projection:
+          ProjectionType: KEYS_ONLY
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
       ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
       SSESpecification:
         SSEEnabled: True
       TableName: !Ref TableName
@@ -214,7 +226,12 @@ Resources:
       Handler: app.handler
       MemorySize: 256
       Runtime: nodejs10.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
       Policies:
+      - DynamoDBCrudPolicy:
+          TableName: !Ref TableName
       - Statement:
         - Effect: Allow
           Action:

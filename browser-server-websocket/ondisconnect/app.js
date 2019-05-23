@@ -9,7 +9,7 @@ exports.handler = function (event, context, callback) {
   var deleteParams = {
     TableName: process.env.TABLE_NAME,
     Key: {
-      connectionId: { S: event.requestContext.connectionId }
+      browserId: { S: event.requestContext.connectionId }
     }
   };
 

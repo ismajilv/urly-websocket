@@ -136,12 +136,24 @@ Resources:
       AttributeDefinitions:
       - AttributeName: browserId
         AttributeType: S
+      - AttributeName: simpleBrowserId
+        AttributeType: S
       KeySchema:
       - AttributeName: browserId
         KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: simpleBrowserIdIndex
+        KeySchema:
+        - AttributeName: simpleBrowserId
+          KeyType: HASH
+        Projection:
+          ProjectionType: KEYS_ONLY
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
       ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
       SSESpecification:
         SSEEnabled: true
       TableName:
@@ -149,7 +161,7 @@ Resources:
   OnConnectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://urly-code-test/077e5e3ced0eefef17db1dd30967a565
+      CodeUri: s3://urly-code-test/05fe3d14732edb1e092651644c8382f7
       Handler: app.handler
       MemorySize: 256
       Runtime: nodejs10.x
@@ -174,7 +186,7 @@ Resources:
   OnDisconnectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://urly-code-test/4b732776f803ff88328e16deb2b6267b
+      CodeUri: s3://urly-code-test/bc9640ebdac635730c2ab540bc4b96a3
       Handler: app.handler
       MemorySize: 256
       Runtime: nodejs10.x
@@ -199,7 +211,7 @@ Resources:
   SendMessageFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://urly-code-test/fd5ad206835ea4ba5b47caddd45105b3
+      CodeUri: s3://urly-code-test/9a55f5e6493fa66e5315f92bf2988bbd
       Handler: app.handler
       MemorySize: 256
       Runtime: nodejs10.x
@@ -230,11 +242,18 @@ Resources:
   GetConnectionIdFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://urly-code-test/00e00a0dcc7767ed0ee627ae30d14c0c
+      CodeUri: s3://urly-code-test/85efdb4172b1144b89696d87e44c9192
       Handler: app.handler
       MemorySize: 256
       Runtime: nodejs10.x
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: TableName
       Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TableName
       - Statement:
         - Effect: Allow
           Action:
