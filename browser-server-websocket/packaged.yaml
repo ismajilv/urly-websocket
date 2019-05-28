@@ -161,7 +161,7 @@ Resources:
   OnConnectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://urly-code-test/05fe3d14732edb1e092651644c8382f7
+      CodeUri: s3://urly-code-test/1fdcc8ae358de29bb9ea139d74f47835
       Handler: app.handler
       MemorySize: 256
       Runtime: nodejs10.x

@@ -12,7 +12,8 @@ exports.handler = function (event, context, callback) {
     TableName: process.env.TABLE_NAME,
     Item: {
       browserId: { S: event.requestContext.connectionId },
-      simpleBrowserId: { S: simpleBrowserId } //TODO
+      simpleBrowserId: { S: simpleBrowserId },
+      connectedClientIds: { L: [] }//TODO
     }
   };
 

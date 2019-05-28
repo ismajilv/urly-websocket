@@ -1,0 +1,155 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'client-server-websocket SAM Template for client-server-websocket that
+  has the DynamoDB table and Lambda functions needed to demonstrate the Websocket
+  protocol on API Gateway.
+
+  '
+Parameters:
+  TableName:
+    Type: String
+    Default: browser_server_client_websocket
+    Description: (Required) The name of the new DynamoDB to store connection identifiers
+      for each connected clients. Minimum 3 characters
+Resources:
+  ClientServerWebSocket:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: ClientServerWebSocket
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: $request.body.message
+  ConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId:
+        Ref: ClientServerWebSocket
+      RouteKey: $connect
+      AuthorizationType: NONE
+      OperationName: ConnectRoute
+      Target:
+        Fn::Join:
+        - /
+        - - integrations
+          - Ref: ConnectInteg
+  ConnectInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId:
+        Ref: ClientServerWebSocket
+      Description: Connect Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnConnectFunction.Arn}/invocations
+  DisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId:
+        Ref: ClientServerWebSocket
+      RouteKey: $disconnect
+      AuthorizationType: NONE
+      OperationName: DisconnectRoute
+      Target:
+        Fn::Join:
+        - /
+        - - integrations
+          - Ref: DisconnectInteg
+  DisconnectInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId:
+        Ref: ClientServerWebSocket
+      Description: Disconnect Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnDisconnectFunction.Arn}/invocations
+  Deployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+    - ConnectRoute
+    - DisconnectRoute
+    Properties:
+      ApiId:
+        Ref: ClientServerWebSocket
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: Prod
+      Description: Prod Stage
+      DeploymentId:
+        Ref: Deployment
+      ApiId:
+        Ref: ClientServerWebSocket
+  OnConnectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://urly-code-test/42a8564ce5da018c58c48277f6d671c0
+      Handler: app.handler
+      MemorySize: 256
+      Runtime: nodejs10.x
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: TableName
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TableName
+  OnConnectPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+    - ClientServerWebSocket
+    - OnConnectFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Ref: OnConnectFunction
+      Principal: apigateway.amazonaws.com
+  OnDisconnectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://urly-code-test/ee8688e3b3f5f90acb7c8db3563dc284
+      Handler: app.handler
+      MemorySize: 256
+      Runtime: nodejs10.x
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: TableName
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TableName
+  OnDisconnectPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+    - ClientServerWebSocket
+    - OnDisconnectFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Ref: OnDisconnectFunction
+      Principal: apigateway.amazonaws.com
+Outputs:
+  OnConnectFunctionArn:
+    Description: OnConnect function ARN
+    Value:
+      Fn::GetAtt:
+      - OnConnectFunction
+      - Arn
+  OnDisconnectFunctionArn:
+    Description: OnDisconnect function ARN
+    Value:
+      Fn::GetAtt:
+      - OnDisconnectFunction
+      - Arn
+  WebSocketURI:
+    Description: The WSS Protocol URI to connect to
+    Value:
+      Fn::Join:
+      - ''
+      - - wss://
+        - Ref: ClientServerWebSocket
+        - .execute-api.
+        - Ref: AWS::Region
+        - .amazonaws.com/
+        - Ref: Stage
